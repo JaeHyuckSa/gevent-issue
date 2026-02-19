@@ -1,0 +1,25 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5671:5671"
+      - "15672:15672"
+    volumes:
+      - ./certs:/certs:ro
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  worker:
+    build: ./worker
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - BROKER_URL=amqps://guest:guest@rabbitmq:5671//
+      - WORKER_NAME=reproduce
+    volumes:
+      - ./certs:/certs:ro
